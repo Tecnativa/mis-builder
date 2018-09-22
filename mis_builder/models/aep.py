@@ -90,7 +90,7 @@ class AccountingExpressionProcessor(object):
         r"(?P<ml_domain>\[.*?\])?"
     )
 
-    def __init__(self, companies, currency=None):
+    def __init__(self, companies, currency=None, account_group_level=0):
         self.env = companies.env
         self.companies = companies
         if not currency:
@@ -103,6 +103,8 @@ class AccountingExpressionProcessor(object):
         else:
             self.currency = currency
         self.dp = self.currency.decimal_places
+        # It specifies if we are unfolding by account group instead of account
+        self._account_group_level = account_group_level
         # before done_parsing: {(ml_domain, mode): set(acc_domain)}
         # after done_parsing: {(ml_domain, mode): list(account_ids)}
         self._map_account_ids = defaultdict(set)
@@ -240,12 +242,17 @@ class AccountingExpressionProcessor(object):
             account_ids.update(self._account_ids_by_acc_domain[acc_domain])
             if not account_id:
                 aml_domain.append(('account_id', 'in', tuple(account_ids)))
-            else:
+            elif not self._account_group_level:
                 # filter on account_id
                 if account_id in account_ids:
                     aml_domain.append(('account_id', '=', account_id))
                 else:
                     continue
+            else:
+                groups = self.env['account.group'].search([
+                    ('parent_id', 'child_of', account_id),
+                ])
+                aml_domain.append(('account_id.group_id', 'in', groups.ids))
             if field == 'crd':
                 aml_domain.append(('credit', '<>', 0.0))
             elif field == 'deb':
@@ -463,8 +470,23 @@ class AccountingExpressionProcessor(object):
                     if account_id in account_ids_data:
                         account_ids.add(account_id)
 
-        for account_id in account_ids:
-            yield account_id, [self._ACC_RE.sub(f, expr) for expr in exprs]
+        if self._account_group_level:
+            accounts = self.env['account.account'].browse(account_ids)
+            group_ids = {}
+            for account in accounts:
+                group = account.group_id._get_group_by_level(
+                    self._account_group_level,
+                )
+                l = group_ids.setdefault(group.id, [])
+                l.append(account.id)
+            for group_id in group_ids:
+                res = []
+                for account_id in group_ids[group_id]:
+                    res += [self._ACC_RE.sub(f, expr) for expr in exprs]
+                yield group_id, [res]
+        else:
+            for account_id in account_ids:
+                yield account_id, [self._ACC_RE.sub(f, expr) for expr in exprs]
 
     @classmethod
     def _get_balances(cls, mode, companies, date_from, date_to,

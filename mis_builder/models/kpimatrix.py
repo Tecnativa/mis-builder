@@ -148,12 +148,13 @@ class KpiMatrixCell(object):
 
 class KpiMatrix(object):
 
-    def __init__(self, env):
+    def __init__(self, env, account_group_level=0):
         # cache language id for faster rendering
         lang_model = env['res.lang']
         self.lang = lang_model._lang_get(env.user.lang)
         self._style_model = env['mis.report.style']
         self._account_model = env['account.account']
+        self._account_group_model = env['account.group']
         # data structures
         # { kpi: KpiMatrixRow }
         self._kpi_rows = OrderedDict()
@@ -167,6 +168,7 @@ class KpiMatrix(object):
         self._sum_todo = {}
         # { account_id: account_name }
         self._account_names = {}
+        self._account_group_level = account_group_level
 
     def declare_kpi(self, kpi):
         """ Declare a new kpi (row) in the matrix.
@@ -418,12 +420,20 @@ class KpiMatrix(object):
         account_ids = set()
         for detail_rows in self._detail_rows.values():
             account_ids.update(detail_rows.keys())
-        accounts = self._account_model.\
-            search([('id', 'in', list(account_ids))])
-        self._account_names = {
-            a.id: u'{} {}'.format(a.code, a.name)
-            for a in accounts
-        }
+        if self._account_group_level:
+            aggregs = self._account_group_model.\
+                search([('id', 'in', list(account_ids))])
+            self._account_names = {
+                g.id: u'{} {}'.format(g.code_prefix, g.name)
+                for g in aggregs
+            }
+        else:
+            accounts = self._account_model.\
+                search([('id', 'in', list(account_ids))])
+            self._account_names = {
+                a.id: u'{} {}'.format(a.code, a.name)
+                for a in accounts
+            }
 
     def get_account_name(self, account_id):
         if account_id not in self._account_names:

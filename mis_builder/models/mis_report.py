@@ -98,9 +98,13 @@ class MisReportKpi(models.Model):
         copy=True,
         string="Expressions",
     )
-    auto_expand_accounts = fields.Boolean(string='Display details by account')
+    # We don't rename these variables to auto_expand_agreggs for not forcing
+    # all depending modules to rename their data
+    auto_expand_accounts = fields.Boolean(
+        string='Display details by aggregation'
+    )
     auto_expand_accounts_style_id = fields.Many2one(
-        string="Style for account detail rows",
+        string="Style for aggregation detail rows",
         comodel_name="mis.report.style",
         required=False
     )
@@ -535,17 +539,18 @@ class MisReport(models.Model):
     # TODO: kpi name cannot be start with query name
 
     @api.multi
-    def prepare_kpi_matrix(self):
+    def prepare_kpi_matrix(self, account_group_level=0):
         self.ensure_one()
-        kpi_matrix = KpiMatrix(self.env)
+        kpi_matrix = KpiMatrix(self.env,
+                               account_group_level=account_group_level)
         for kpi in self.kpi_ids:
             kpi_matrix.declare_kpi(kpi)
         return kpi_matrix
 
     @api.multi
-    def _prepare_aep(self, companies, currency=None):
+    def _prepare_aep(self, companies, currency=None, account_group_level=0):
         self.ensure_one()
-        aep = AEP(companies, currency)
+        aep = AEP(companies, currency, account_group_level=account_group_level)
         for kpi in self.kpi_ids:
             for expression in kpi.expression_ids:
                 if expression.name:
@@ -845,7 +850,11 @@ class MisReport(models.Model):
                 name_error = False
                 for expression, replaced_expr in \
                         zip(expressions, replaced_exprs):
-                    vals.append(mis_safe_eval(replaced_expr, locals_dict))
+                    if isinstance(replaced_expr, list):
+                        vals.append(sum(mis_safe_eval(r, locals_dict)
+                                        for r in replaced_expr))
+                    else:
+                        vals.append(mis_safe_eval(replaced_expr, locals_dict))
                     if replaced_expr != expression:
                         drilldown_args.append({
                             'period_id': col_key,

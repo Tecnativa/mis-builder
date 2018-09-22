@@ -115,6 +115,10 @@
                             <group name="layout">
                                 <field name="landscape_pdf"/>
                                 <field name="no_auto_expand_accounts"/>
+                                <field name="group_by" widget="radio"/>
+                                <field name="account_group_level"
+                                       attrs="{'invisible': [('group_by', '!=', 'account_group')]}"
+                                />
                                 <field name="display_columns_description"/>
                                 <field name="hide_analytic_filters"/>
                             </group>
