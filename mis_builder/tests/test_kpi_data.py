@@ -10,6 +10,8 @@ from .common import init_test_model
 
 
 class TestKpiData(SavepointCase):
+    at_install = False
+    post_install = True
 
     # pylint: disable=missing-return
     @classmethod

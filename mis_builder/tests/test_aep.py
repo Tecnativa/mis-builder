@@ -15,6 +15,8 @@ from ..models.accounting_none import AccountingNone
 
 
 class TestAEP(common.TransactionCase):
+    at_install = False
+    post_install = True
 
     def setUp(self):
         super(TestAEP, self).setUp()

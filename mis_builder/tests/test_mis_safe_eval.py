@@ -8,6 +8,8 @@ from ..models.mis_safe_eval import mis_safe_eval, DataError, NameDataError
 
 
 class TestMisSafeEval(common.TransactionCase):
+    at_install = False
+    post_install = True
 
     def test_nominal(self):
         val = mis_safe_eval('a + 1', {'a': 1})

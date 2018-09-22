@@ -8,6 +8,8 @@ from ..models.mis_report import _utc_midnight
 
 
 class TestUtcMidnight(common.TransactionCase):
+    at_install = False
+    post_install = True
 
     def test_utc_midnight(self):
         date_to_convert = '2014-07-05'

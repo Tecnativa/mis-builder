@@ -33,6 +33,8 @@ class TestMisReportInstance(common.HttpCase):
     We don't check the actual results here too much as computation correctness
     should be covered by lower level unit tests.
     """
+    at_install = False
+    post_install = True
 
     def setUp(self):
         super(TestMisReportInstance, self).setUp()

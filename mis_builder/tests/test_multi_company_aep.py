@@ -13,6 +13,8 @@ from ..models.accounting_none import AccountingNone
 
 
 class TestMultiCompanyAEP(common.TransactionCase):
+    at_install = False
+    post_install = True
 
     def setUp(self):
         super(TestMultiCompanyAEP, self).setUp()

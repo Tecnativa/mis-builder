@@ -12,6 +12,8 @@ from ..models.data_error import DataError
 
 
 class TestRendering(common.TransactionCase):
+    at_install = False
+    post_install = True
 
     def setUp(self):
         super(TestRendering, self).setUp()

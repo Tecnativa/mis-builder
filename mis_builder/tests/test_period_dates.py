@@ -14,6 +14,8 @@ from .common import assert_matrix
 
 
 class TestPeriodDates(common.TransactionCase):
+    at_install = False
+    post_install = True
 
     def setUp(self):
         super(TestPeriodDates, self).setUp()
@@ -178,7 +180,7 @@ class TestPeriodDates(common.TransactionCase):
     def test_rel_date_range(self):
         # create a few date ranges
         date_range_type = self.env['date.range.type'].create(dict(
-            name="Year",
+            name="Test mis_builder year",
         ))
         for year in (2016, 2017, 2018):
             self.env['date.range'].create(dict(
